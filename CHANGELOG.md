@@ -3,6 +3,32 @@
 All notable changes to this repository are recorded here. The format is a short
 entry per release: what changed, why, and how it was verified.
 
+## Unreleased
+
+- **What:** add the idle-watchdog launch admission gate: `scripts/idle-watchdog.py`
+  (cron entry point with the locked guard order - singleton flock, kill-switch
+  read first after the lock, authoritative process-registry adapter, project
+  state record parse without any closure pass, shared-record gate health,
+  two-hour cooldown from the last attempt, minute-free one-fire base
+  fingerprint, four attempts per UTC day, 05:00-21:00 `America/New_York`
+  window, final toggle recheck, transactional pre-spawn reservation, exactly
+  one profile-native `hermes chat --oneshot --query-file` child), the sweep
+  brief `briefs/idle-watchdog-sweep.md`, the watchdog schema and seed
+  `records/IDLE-WATCHDOG-STATE.json`, the append-only redacted event log
+  `records/idle-watchdog-ticks.jsonl`, `records/tick-receipts/` with its
+  readme, the focused suite `tests/test_idle_watchdog.py`, and the shipped-not-installed
+  cron specification `cron/idle-watchdog.cron`.
+- **Boundary:** the gate observes and admits; it never evaluates, claims an
+  epoch, flips the kill switch, deletes a lock by age, or auto-clears a pending
+  reservation. Nothing installs the crontab line: that is an operator action
+  after build, QA, and integration approval, and it does not include flipping
+  the contribution-state toggle.
+- **Verified:** `tests/test_idle_watchdog.py` runs 78 fixture and subprocess
+  cases against temporary roots, fake gate executables, a fake process probe,
+  and a fake launcher; every case asserts the event row and the child
+  invocation count. No case touches a live record, a live profile database,
+  or a real evaluator session.
+
 ## 1.1.0
 
 - **What:** add the contribution-state record and its gate. `records/CONTRIB-STATE.md.tmpl`

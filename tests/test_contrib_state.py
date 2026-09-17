@@ -155,14 +155,14 @@ class TestWriteLimits(StateCase):
             "| cc-l%d | lane | o/r | pr | - | external | approval op-1 | "
             "lease_until=2026-09-17T20:00:00Z | lane | 2026-09-17T10:00:00Z | evidence/x |\n" % i
             for i in (1, 2, 3))
-        code, out = run_gate(self.state(external="on", rows=rows))
+        code, out = run_gate(self.state(external="on", rows=rows), "--now", WITHIN_QUIET_HOURS)
         self.assertEqual(code, 1, out)
         self.assertIn("cap is 2", out)
 
     def test_an_expired_lease_is_not_a_live_lane(self):
         rows = ("| cc-l1 | lane | o/r | pr | - | external | approval op-1 | "
                 "lease_until=2026-09-17T10:00:00Z | lane | 2026-09-17T08:00:00Z | evidence/x |\n")
-        code, out = run_gate(self.state(external="on", rows=rows))
+        code, out = run_gate(self.state(external="on", rows=rows), "--now", WITHIN_QUIET_HOURS)
         self.assertEqual(code, 0, out)
 
     def test_the_third_write_to_one_repo_inside_an_hour_is_refused(self):
@@ -190,7 +190,7 @@ class TestGrants(StateCase):
         rows = ("| cc-1 | grant | o/r | comment | 7 | external | grant g1 | grant_id=g1 "
                 "class=comment scope=o/r expires=2026-09-24T00:00:00Z max_actions=1 "
                 "gates=qa-pass | - | 2026-09-17T09:00:00Z | evidence/x |\n")
-        code, out = run_gate(self.state(external="on", rows=rows))
+        code, out = run_gate(self.state(external="on", rows=rows), "--now", WITHIN_QUIET_HOURS)
         self.assertEqual(code, 0, out)
 
     def test_an_expired_grant_is_refused(self):
