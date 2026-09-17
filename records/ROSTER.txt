@@ -1,0 +1,4 @@
+# records/ROSTER.txt - the role names a routing row may address.
+# One role per line after the colon; blank lines and # comments are ignored.
+# The rotation gate fails closed when this file is absent and no roster is supplied.
+roles: research, architecture, design, build, qa, coordination, relay, generalist

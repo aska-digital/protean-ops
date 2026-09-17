@@ -1,0 +1,23 @@
+# LEARNINGS - incident intake (schema template)
+
+Append-only. One row per incident. Every incident becomes exactly one bounded rule with one
+canonical home and one named enforcement surface; a row missing any field is invalid. This
+template carries the fixed columns and an empty state; it contains no live rows. Gate that reads
+it: `scripts/protean-ops/check-learnings.py`. No preference, and no lesson without an enforcement
+surface, is accepted.
+
+## Columns (fixed)
+
+| column | meaning |
+|---|---|
+| learning id | `lrn-<n>`, sequential |
+| incident | what happened, one sentence |
+| root cause | the mechanism behind it, one sentence |
+| one bounded rule | the single rule the incident yields (imperative, testable) |
+| canonical home | the one file that owns the rule; every other mention is a pointer |
+| enforcement surface | the gate or check that rejects a violation, by exact command or gate id |
+| independent verifier | the role that verifies it without authoring the fix |
+| status | `open (enforcement pending)`, `enforced`, or `superseded <by>` |
+| evidence path | where the incident is documented on disk |
+
+## Rows

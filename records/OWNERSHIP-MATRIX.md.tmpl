@@ -1,0 +1,17 @@
+# OWNERSHIP-MATRIX - action-level ownership (schema template)
+
+One row per action set. This template carries the fixed columns and an empty state; it contains
+no live rows. Append-only: rows are never rewritten or removed.
+
+## Action-level ownership
+
+| action | domain | owner role | allowed decisions | forbidden decisions | owned files | upstream approval |
+|---|---|---|---|---|---|---|
+| (empty state) | - | - | - | - | - | - |
+
+## Invariants
+
+1. No two writers touch the same file.
+2. A role may not write outside its owned files.
+3. Only roles named in `records/ROSTER.txt` are addressed.
+4. Read-back outranks a worker's report: reports are claims until verified on disk.

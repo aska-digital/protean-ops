@@ -1,0 +1,65 @@
+{
+  "slug": "protean-ops",
+  "version": "1.0.0",
+  "contract": "The dispatch/rotation/inflight ops kit: append-only record schemas and the deterministic gates that check them.",
+  "kind": "records",
+  "entrypoint": "install.sh",
+  "payload": [
+    "records",
+    "scripts/protean-ops",
+    "gates/protean-ops"
+  ],
+  "installTargets": [
+    "records",
+    "scripts/protean-ops",
+    "gates/protean-ops"
+  ],
+  "gates": [
+    {
+      "name": "internal-names",
+      "cwd": ".",
+      "postInstall": true,
+      "cmd": "python3 gates/protean-ops/check-internal-names.py ."
+    },
+    {
+      "name": "op-rotation",
+      "cwd": ".",
+      "postInstall": true,
+      "cmd": "python3 scripts/protean-ops/check-rotation.py records/examples/valid/ROTATION-STATE.md --roster records/examples/valid/ROSTER.txt"
+    },
+    {
+      "name": "op-inflight",
+      "cwd": ".",
+      "postInstall": true,
+      "cmd": "python3 scripts/protean-ops/check-inflight.py records/examples/valid/INFLIGHT.md"
+    },
+    {
+      "name": "op-learnings",
+      "cwd": ".",
+      "postInstall": true,
+      "cmd": "python3 scripts/protean-ops/check-learnings.py records/examples/valid/LEARNINGS.md"
+    },
+    {
+      "name": "op-hotpath-freeze",
+      "cwd": ".",
+      "postInstall": true,
+      "cmd": "python3 scripts/protean-ops/check-hotpath-freeze.py records/examples/valid/hotpath-manifest.md5"
+    },
+    {
+      "name": "op-decision-report",
+      "cwd": ".",
+      "postInstall": true,
+      "cmd": "python3 scripts/protean-ops/check-decision-report.py records/examples/valid/decision-report.html --evidence records/examples/valid/decision-evidence.md"
+    }
+  ],
+  "requires": [],
+  "recommends": [],
+  "runtime": {
+    "python": ">=3.9",
+    "bin": [
+      "git"
+    ]
+  },
+  "license": "MIT",
+  "open": []
+}
