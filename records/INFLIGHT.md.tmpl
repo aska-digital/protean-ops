@@ -1,0 +1,25 @@
+# INFLIGHT - live writer leases (schema template)
+
+Append-only. One row per claimed write. Claim before the first write of a declared file set;
+release on exit. This template carries the fixed columns and an empty state; it contains no live
+rows. Gate that reads it: `scripts/protean-ops/check-inflight.py` (no two live writers on one
+tree may own overlapping paths; a claim past its lease expiry is a crashed claim, not a silently
+reused one). Only claim sessions you can observe; never invent a row for another session.
+
+## Columns (fixed)
+
+| column | meaning |
+|---|---|
+| claim id | `inf-<UTC yyyymmdd-hhmm>`, unique |
+| session id | the claiming session's own session id |
+| role | the role the session runs as |
+| provider/model | verified from that role's own configuration at claim time |
+| tree / worktree / branch | repository path, branch, and worktree the writes touch |
+| owned files | the exact file set this claim may write |
+| claim time | UTC ISO-8601 |
+| lease expiry | claim plus the lease window (2 hours by default) |
+| release time | UTC ISO-8601 when the file set was released, or `-` while live |
+| conflict result | outcome of the baseline check taken immediately before each write: `none`, `aborted <file>`, or `conflict recorded <detail>` |
+| status | `active`, `released`, `crashed`, or `conflict` |
+
+## Lease rows

@@ -1,0 +1,26 @@
+# ROTATION-STATE - handoff rotation state (schema template)
+
+Append-only. One row per handoff boundary. This template carries the fixed columns and an empty
+state; it contains no live rows. Rotation law lives in the `protean-control-plane` procedure
+skill; this file is the state half. Gate that reads it: `scripts/protean-ops/check-rotation.py`
+(no two consecutive rows address the same next worker unless the later row carries an explicit,
+non-empty exception reason).
+
+Worker cells carry role names from `records/ROSTER.txt` only. Roles outside the roster are
+rejected by the gate: the roster is the allowlist, so no other name list needs to be shipped.
+
+## Columns (fixed)
+
+| column | meaning |
+|---|---|
+| handoff id | `<project>-<boundary>`, unique per handoff |
+| boundary time | UTC ISO-8601 when the handoff was made |
+| previous worker | role finishing its assignment |
+| next worker | role taking the next bounded unit |
+| stage / unit | pipeline stage and the bounded artifact |
+| capability justification | why the next worker owns this domain (capability and file ownership, never preference) |
+| verified provider/model | read from the next worker's own configuration at dispatch, and confirmed after the run |
+| exception reason | why the no-consecutive-assignment rule was waived, or `none` |
+| release state | `active` while the handoff is open; `released <UTC>` once the next worker claims its lease; `blocked <reason>` if it stalls |
+
+## Rows

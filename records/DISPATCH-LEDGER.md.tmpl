@@ -1,0 +1,22 @@
+# DISPATCH-LEDGER - launch register (schema template)
+
+One row per launch, written before the process starts. This template carries the fixed columns
+and an empty state; it contains no live rows. A process may not be launched when its row is
+missing. Append-only: rows are never rewritten or removed.
+
+## Columns (fixed)
+
+| column | meaning |
+|---|---|
+| task id | `<project>-<unit>-<n>`, unique |
+| owner role | the role that owns the unit |
+| model (verified) | the provider and model read from that role's own configuration immediately before launch |
+| domain | the domain the unit belongs to |
+| allowed decisions | what the unit may decide |
+| forbidden decisions | what the unit may not decide |
+| owned files | the exact paths the unit may write |
+| upstream artifact | the stable input the unit builds on |
+| launch session id | filled from the launch's own output log, never prewritten |
+| exit artifact | the artifact the unit must leave behind, with its acceptance bar |
+
+## Current-era dispatch schema

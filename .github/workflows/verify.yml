@@ -1,0 +1,32 @@
+name: Verify
+on:
+  push:
+    branches: [main, 'release-*']
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    name: Gates and tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.11']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Dry-run the standalone installer
+        run: bash install.sh --target "$RUNNER_TEMP/installed" --dry-run
+      - name: Run declared gates
+        run: |
+          python3 gates/protean-ops/check-internal-names.py .
+          python3 scripts/protean-ops/check-rotation.py records/examples/valid/ROTATION-STATE.md --roster records/examples/valid/ROSTER.txt
+          python3 scripts/protean-ops/check-inflight.py records/examples/valid/INFLIGHT.md
+          python3 scripts/protean-ops/check-learnings.py records/examples/valid/LEARNINGS.md
+          python3 scripts/protean-ops/check-hotpath-freeze.py records/examples/valid/hotpath-manifest.md5
+          python3 scripts/protean-ops/check-decision-report.py records/examples/valid/decision-report.html --evidence records/examples/valid/decision-evidence.md
+      - name: Run tests
+        run: python3 -m unittest discover -s tests -v
