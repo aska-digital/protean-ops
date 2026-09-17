@@ -6,6 +6,19 @@ The records and gates ingredient of the Protean Kit distribution. It carries the
 five append-only record schemas, the roster allowlist, and the five read-only
 gates that check them.
 
+## Do you need this?
+
+ROLE: The records and gates ingredient. Five append-only record schemas with a roster allowlist, checked by five deterministic read-only gates.
+
+USE WHEN:
+- A run must keep rotation state, inflight work, learnings, a hot-path freeze manifest, and decision reports as append-only records copied from the schema templates.
+- A gate must verify a record with a stdlib-only script that reads only, exits 0 pass, 1 violation, or 2 missing or unparseable input, redirectable with `PROTEAN_RECORDS_ROOT`.
+- A fresh clone must be verifiable. The declared gate commands run against the synthetic fixtures under `records/examples/`.
+
+SKIP WHEN:
+- The need is state mutation by the gate itself. Gates never write a record, and templates ship with empty state and no live rows.
+- The need is prose, draft rendering, protocol validation, or GitHub flow. Those live in their own ingredients.
+
 ## What it installs and where
 
 | Path | Contents |
