@@ -1,0 +1,81 @@
+# CONTRIB-STATE - continual contribution mode (schema template)
+
+The record half of the mode. The RULE lives in the control-plane skill; this
+file records only the VALUE and its history. Append-only: rows are never
+rewritten or removed, so every counter the gate reports is recomputed from
+timestamps rather than remembered.
+
+This template carries the fixed header and an empty state. It contains no live
+rows. An installed copy is the operator's own runtime record, and a missing
+record reads as `external_contrib: off`.
+
+One flag, one home, fail closed:
+
+- `internal_contrib` is the always-on half. The gate refuses `off` unless the
+  same record cites `decision: <id>` for a recorded operator decision.
+- `external_contrib` is the kill switch. An absent record, an unreadable
+  record, or a value outside `{on, off}` all read as `off`: no remote write of
+  any kind, including a push to a fork. A local branch, commit, test run, and
+  rendered draft stay allowed.
+
+Gate: `scripts/protean-ops/check-contrib-state.py` (G-14). Read-only,
+stdlib-only, fail-closed.
+
+## Header (fixed keys)
+
+| key | value |
+|---|---|
+| schema_version | 1 |
+| internal_contrib | on |
+| external_contrib | off |
+| read_at | - |
+| mode_epoch | - |
+| last_change | - |
+
+- `read_at`: UTC when a dispatch last read the value, recorded together with the
+  file's md5 in the lane receipt. A value read earlier in a lane is not
+  authority.
+- `mode_epoch`: the fingerprint of the last idle epoch claimed. One epoch is
+  claimed once.
+- `last_change`: UTC, actor, and reason of the last header change. A flip to
+  `on` also appends a `switch` row that cites the operator reference.
+
+## Rows (append-only; fixed columns)
+
+| row id | kind | repo | action | thread | mode | authority | detail | lane / session | time | evidence |
+|---|---|---|---|---|---|---|---|---|---|---|
+| (empty state - no rows recorded) | - | - | - | - | - | - | - | - | - | - |
+
+Column notes:
+
+- `row id`: `cc-<UTC yyyymmdd-hhmmss>`, unique.
+- `kind`: `epoch`, `switch`, `lane`, `submitted`, `grant`, `consumed`, `blocked`,
+  or `note`.
+- `repo`: `owner/name`, or `-`.
+- `action`: `pr`, `issue`, `comment`, `review`, `merge`, or `-`.
+- `thread`: the pull request or issue number, or `-`.
+- `mode`: `internal` or `external`.
+- `authority`: `internal-default`, `grant <id>`, `approval <ref>`, or `-`.
+- `detail`: `key=value` tokens the gate reads. A `lane` row carries
+  `lease_until=<UTC>`. A `grant` row carries `grant_id=`, `class=`, `scope=`,
+  `expires=`, `max_actions=`, and the gates that must be green for each use. A
+  `consumed` row names its grant in both `authority` and `detail`.
+- `time`: UTC ISO-8601.
+- `evidence`: the path to the raw command output that backs the row.
+
+## What the gate enforces from this record
+
+| rule | bounded value |
+|---|---|
+| live contribution lanes | 2 total, of which at most 1 external |
+| external pull requests opened | 1 per 24 h (any repo), 3 per 7 d (any repo) |
+| external issues opened | 1 per 24 h (any repo), 1 per 7 d (one repo) |
+| external comments plus reviews | 2 per 24 h, 5 per 7 d |
+| writes to one thread | 1 per 24 h |
+| writes to one repo, any kind | 2 tolerated inside 1 h; the next is refused and the switch flips to off pending review |
+| external write window | 05:00-21:00 in `America/New_York`, checked at write time |
+| grant validity | `expires` within 14 days, `max_actions` at most 3, one consumption row per use, no expired grant |
+
+Not derivable from this record, and therefore not claimed by this gate: live
+repository backlog counts and thread attention metrics. A lane reads those live
+and records the raw output in its own evidence file.

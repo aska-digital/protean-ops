@@ -24,8 +24,11 @@ SKIP WHEN:
 | Path | Contents |
 |---|---|
 | `records/` | schema templates `.md.tmpl` (fixed columns, empty state), `ROSTER.txt` |
-| `scripts/protean-ops/` | the five gate scripts |
+| `scripts/protean-ops/` | the six gate scripts |
 | `gates/protean-ops/` | the leak gate and the blocklist |
+
+The six gates are rotation, inflight, learnings, hot-path freeze, decision
+report, and the contribution-state gate (G-14).
 
 ## Install
 
@@ -55,7 +58,24 @@ python3 scripts/protean-ops/check-inflight.py <records>/INFLIGHT.md
 python3 scripts/protean-ops/check-learnings.py <records>/LEARNINGS.md
 python3 scripts/protean-ops/check-hotpath-freeze.py <manifest.md5>
 python3 scripts/protean-ops/check-decision-report.py <report.html> [--manifest M] [--evidence E]
+python3 scripts/protean-ops/check-contrib-state.py <records>/CONTRIB-STATE.md
 ```
+
+The contribution-state gate answers two questions from one append-only record:
+whether the recorded state is legal, and whether a queried write may happen now.
+Its second half is time-aware, so it takes an explicit target:
+
+```bash
+python3 scripts/protean-ops/check-contrib-state.py <records>/CONTRIB-STATE.md \
+  --target external --repo <owner/name> --action pr
+```
+
+Exit 0 means the state is legal and the queried write is inside the lane cap,
+the rate windows, the quiet hours, and the grant rules; exit 1 refuses the
+write. Two defaults are contractual: `internal_contrib` is always on (`off` is
+refused unless the record cites `decision: <id>`), and an absent or unreadable
+record reads as `external_contrib: off`, so a remote write fails closed while a
+local branch, commit, test run, and rendered draft stay allowed.
 
 Record resolution defaults to `./records` and can be redirected with
 `$PROTEAN_RECORDS_ROOT`. The rotation roster comes from `--roster`,
@@ -77,14 +97,16 @@ run against, not record content.
 | learnings | `python3 scripts/protean-ops/check-learnings.py records/examples/valid/LEARNINGS.md` |
 | hot-path freeze | `python3 scripts/protean-ops/check-hotpath-freeze.py records/examples/valid/hotpath-manifest.md5` |
 | decision report | `python3 scripts/protean-ops/check-decision-report.py records/examples/valid/decision-report.html --evidence records/examples/valid/decision-evidence.md` |
+| contribution state | `python3 scripts/protean-ops/check-contrib-state.py records/examples/valid/CONTRIB-STATE.md` |
 
 The declared commands run against the shipped fixture records under
 `records/examples/`, so a fresh clone is verifiable and the same commands work
 after installation. Point them at your own records root once you have live
 records.
 `tests/test_gates.py` gives every gate a green fixture and at least one
-single-cause red fixture. `tests/test_install.py` proves the installer and its
-dry run.
+single-cause red fixture. `tests/test_contrib_state.py` covers the
+contribution-state gate's toggle, lane, rate, quiet-hour, and grant rules.
+`tests/test_install.py` proves the installer and its dry run.
 
 ## Offline and cache behaviour
 
@@ -98,6 +120,13 @@ The schemas are shipped empty by design. The kit carries no adapter for a task
 tracker or an external ledger: a record is a file a role appends to. Retention
 windows and the home of the authorization records are unresolved items of the
 protocol ingredient, not of this one.
+
+Two limits of the contribution-state gate are stated rather than hidden. Live
+repository backlog counts and thread attention metrics are not derivable from a
+local record, so the gate does not claim them: a lane reads them live and
+records the raw output in its own evidence file. The quiet-hours rule needs a
+timezone database for `America/New_York`; when none is available the gate
+refuses an external write instead of passing it.
 
 ## License
 
