@@ -155,7 +155,7 @@ class TestWriteLimits(StateCase):
             "| cc-l%d | lane | o/r | pr | - | external | approval op-1 | "
             "lease_until=2026-09-17T20:00:00Z | lane | 2026-09-17T10:00:00Z | evidence/x |\n" % i
             for i in (1, 2, 3))
-        code, out = run_gate(self.state(external="on", rows=rows))
+        code, out = run_gate(self.state(external="on", rows=rows), "--now", WITHIN_QUIET_HOURS)
         self.assertEqual(code, 1, out)
         self.assertIn("cap is 2", out)
 
