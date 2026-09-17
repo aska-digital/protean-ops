@@ -30,6 +30,42 @@ SKIP WHEN:
 The six gates are rotation, inflight, learnings, hot-path freeze, decision
 report, and the contribution-state gate (G-14).
 
+The idle watchdog is not part of the installed payload: it runs from this
+checkout via absolute paths. Its files are `scripts/idle-watchdog.py`,
+`briefs/idle-watchdog-sweep.md`, the seed `records/IDLE-WATCHDOG-STATE.json`,
+the append-only `records/idle-watchdog-ticks.jsonl`, the
+`records/tick-receipts/` directory, and the cron specification
+`cron/idle-watchdog.cron`.
+
+## Idle watchdog (shipped, not installed)
+
+`scripts/idle-watchdog.py` is a launch admission gate for a scheduled liveness
+tick: it reads durable state, applies an ordered guard pipeline (singleton
+lock, kill switch, authoritative process registry, project state record,
+shared-record gates, cooldown and one-fire fingerprint, daily attempt cap,
+quiet hours), and either launches exactly one evaluator sweep or records a
+skip. It is not a contribution evaluator: it selects no target, claims no
+epoch, performs no closure pass, and writes nothing outside its own state,
+event log, sweep logs, and lock. Missing, malformed, stale, or uncertain state
+always skips; the kill switch is never flipped by this process; a pending
+reservation is never cleared by age (only the explicit recovery subcommand,
+under the same lock, with an operator assertion).
+
+Installation is an operator action this repository does not perform. Read
+`cron/idle-watchdog.cron`, replace its placeholders with absolute paths, keep
+every double quote, add the single `*/15 * * * *` line to the crontab, and
+verify with `crontab -l | grep -c idle-watchdog.py` (must print `1`). Do not
+install a second line and do not flip the contribution-state toggle as part of
+installing the tick. Until then the watchdog never runs.
+
+Safety properties are asserted by `tests/test_idle_watchdog.py` (fixture and
+subprocess tests only; temporary roots, fake gates, a fake launcher; no live
+records, no live profile database, no real evaluator session):
+
+```bash
+python3 -m unittest tests.test_idle_watchdog -v
+```
+
 ## Install
 
 ```bash

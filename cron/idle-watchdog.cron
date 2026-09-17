@@ -1,0 +1,41 @@
+# idle-watchdog cron specification - SHIP ONLY.
+#
+# This file is a specification, not an installation. Nothing in this repository
+# installs it. The operator installs it as the only action that enables the tick,
+# after implementation review, independent verification, and integration
+# approval.
+#
+# Substitution table (replace every placeholder, keep every double quote):
+#
+#   __HOME__                 absolute path to the operator home directory the
+#                            tick runs as (cron gives a minimal environment)
+#   __OPS_ROOT__             absolute path to this checkout
+#                            (may contain spaces - the quotes are load-bearing)
+#   __EVALUATOR_HOME__       absolute path to the evaluator profile home
+#                            (HERMES_HOME for the launched sweep)
+#   __TASK_HOME__            absolute path to the project state record
+#   __CONTRIB_STATE__        absolute path to the contribution-state record
+#   __INFLIGHT__             absolute path to the inflight record
+#   __ROTATION__             absolute path to the rotation record
+#   __GATE_SCRIPTS__         absolute path to the directory holding the gate
+#                            scripts (check-inflight.py, check-contrib-state.py,
+#                            check-rotation.py)
+#   __SOP_CONTRIB_MODE__     absolute path to the locked contribution procedure
+#   __SOP_IDLE_TRIGGER__     absolute path to the locked end-of-turn procedure
+#   __PROJECT__              the project name the tick is scoped to
+#
+# Install exactly ONE line below the two settings, then verify with:
+#
+#   crontab -l | grep -c idle-watchdog.py     # must print 1
+#
+# Do not install a second line, do not use @every, and do not remove the quotes.
+# A tick whose required root is missing or relative stops before any launch and
+# says so on stderr; nothing is guessed from the working directory.
+#
+# The tick interval is a liveness check, not a second event loop: the launched
+# sweep is the only canonical evaluator, and it may decide that no contribution
+# lane is permitted.
+
+SHELL=/bin/sh
+PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+*/15 * * * * export HOME="__HOME__" PROTEAN_HERMES_HOME="__EVALUATOR_HOME__" PROTEAN_WATCHDOG_ROOT="__OPS_ROOT__" PROTEAN_TASK_HOME="__TASK_HOME__" PROTEAN_CONTRIB_STATE="__CONTRIB_STATE__" PROTEAN_INFLIGHT="__INFLIGHT__" PROTEAN_ROTATION="__ROTATION__" PROTEAN_WATCHDOG_PROJECT="__PROJECT__" PROTEAN_GATE_INFLIGHT="__GATE_SCRIPTS__/check-inflight.py" PROTEAN_GATE_CONTRIB_STATE="__GATE_SCRIPTS__/check-contrib-state.py" PROTEAN_GATE_ROTATION="__GATE_SCRIPTS__/check-rotation.py" PROTEAN_SOP_CONTRIB_MODE="__SOP_CONTRIB_MODE__" PROTEAN_SOP_IDLE_TRIGGER="__SOP_IDLE_TRIGGER__"; exec /usr/bin/python3 "__OPS_ROOT__/scripts/idle-watchdog.py" >> "__OPS_ROOT__/logs/cron.log" 2>&1
