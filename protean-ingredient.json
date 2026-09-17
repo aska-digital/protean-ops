@@ -1,6 +1,6 @@
 {
   "slug": "protean-ops",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "contract": "The dispatch/rotation/inflight ops kit: append-only record schemas and the deterministic gates that check them.",
   "kind": "records",
   "entrypoint": "install.sh",
@@ -50,6 +50,12 @@
       "cwd": ".",
       "postInstall": true,
       "cmd": "python3 scripts/protean-ops/check-decision-report.py records/examples/valid/decision-report.html --evidence records/examples/valid/decision-evidence.md"
+    },
+    {
+      "name": "op-contrib-state",
+      "cwd": ".",
+      "postInstall": true,
+      "cmd": "python3 scripts/protean-ops/check-contrib-state.py records/examples/valid/CONTRIB-STATE.md"
     }
   ],
   "requires": [],
