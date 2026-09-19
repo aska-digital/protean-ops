@@ -89,13 +89,28 @@ Copy the schema templates to the record names the gates expect, then let a role
 append rows. The gates read a record; they never write one:
 
 ```bash
-python3 scripts/protean-ops/check-rotation.py <records>/ROTATION-STATE.md
-python3 scripts/protean-ops/check-inflight.py <records>/INFLIGHT.md
-python3 scripts/protean-ops/check-learnings.py <records>/LEARNINGS.md
-python3 scripts/protean-ops/check-hotpath-freeze.py <manifest.md5>
-python3 scripts/protean-ops/check-decision-report.py <report.html> [--manifest M] [--evidence E]
-python3 scripts/protean-ops/check-contrib-state.py <records>/CONTRIB-STATE.md
+cp records/ROTATION-STATE.md.tmpl records/ROTATION-STATE.md
+cp records/INFLIGHT.md.tmpl records/INFLIGHT.md
+cp records/LEARNINGS.md.tmpl records/LEARNINGS.md
+cp records/CONTRIB-STATE.md.tmpl records/CONTRIB-STATE.md
+
+python3 scripts/protean-ops/check-rotation.py records/ROTATION-STATE.md
+python3 scripts/protean-ops/check-inflight.py records/INFLIGHT.md
+python3 scripts/protean-ops/check-learnings.py records/LEARNINGS.md
+python3 scripts/protean-ops/check-contrib-state.py records/CONTRIB-STATE.md
 ```
+
+Every template carries its record's table header, so a copied template is read as a
+record and not as a missing file. A record with no row yet is not yet checkable: the
+rotation and learnings gates report missing input (exit 2), never a violation, until
+the first row is appended. The in-flight and contribution-state templates ship an
+explicit empty-state row, so those two pass before any live row exists. The rotation
+roster comes from `ROSTER.txt` beside the record, which the payload ships at
+`records/ROSTER.txt`.
+
+The hot-path freeze gate and the decision-report gate need artifacts no template
+ships, a freeze manifest and a rendered report, so they are declared against the
+synthetic fixtures under `records/examples/`.
 
 The contribution-state gate answers two questions from one append-only record:
 whether the recorded state is legal, and whether a queried write may happen now.
@@ -128,7 +143,7 @@ run against, not record content.
 | Gate | Command (declared) |
 |---|---|
 | internal-name gate | `python3 gates/protean-ops/check-internal-names.py .` |
-| rotation | `python3 scripts/protean-ops/check-rotation.py tests/fixtures/valid/ROTATION-STATE.md` |
+| rotation | `python3 scripts/protean-ops/check-rotation.py records/examples/valid/ROTATION-STATE.md --roster records/examples/valid/ROSTER.txt` |
 | inflight | `python3 scripts/protean-ops/check-inflight.py records/examples/valid/INFLIGHT.md` |
 | learnings | `python3 scripts/protean-ops/check-learnings.py records/examples/valid/LEARNINGS.md` |
 | hot-path freeze | `python3 scripts/protean-ops/check-hotpath-freeze.py records/examples/valid/hotpath-manifest.md5` |
@@ -138,7 +153,10 @@ run against, not record content.
 The declared commands run against the shipped fixture records under
 `records/examples/`, so a fresh clone is verifiable and the same commands work
 after installation. Point them at your own records root once you have live
-records.
+records. This table is the same set of commands `protean-ingredient.json`
+declares; that descriptor is authoritative if the two ever disagree, and
+`tests/` is not part of the installed payload, so no declared command may point
+into it.
 `tests/test_gates.py` gives every gate a green fixture and at least one
 single-cause red fixture. `tests/test_contrib_state.py` covers the
 contribution-state gate's toggle, lane, rate, quiet-hour, and grant rules.

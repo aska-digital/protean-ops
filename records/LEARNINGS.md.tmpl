@@ -21,3 +21,11 @@ surface, is accepted.
 | evidence path | where the incident is documented on disk |
 
 ## Rows
+
+| learning id | incident | root cause | one bounded rule | canonical home | enforcement surface | independent verifier | status | evidence path |
+|---|---|---|---|---|---|---|---|---|
+
+The header above is the fixed column set, in the order `check-learnings.py` reads it.
+Append one row per incident below it. A record with no incident row yet is not yet
+checkable: the gate reports missing input (exit 2), never a violation, until the
+first row exists.

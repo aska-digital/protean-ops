@@ -24,3 +24,11 @@ rejected by the gate: the roster is the allowlist, so no other name list needs t
 | release state | `active` while the handoff is open; `released <UTC>` once the next worker claims its lease; `blocked <reason>` if it stalls |
 
 ## Rows
+
+| handoff id | boundary time | previous worker | next worker | stage / unit | capability justification | verified provider/model | exception reason | release state |
+|---|---|---|---|---|---|---|---|---|
+
+The header above is the fixed column set, in the order `check-rotation.py` reads it.
+Append one row per handoff boundary below it. A record with no handoff row yet is
+not yet checkable: the gate reports missing input (exit 2), never a violation, until
+the first row exists.
