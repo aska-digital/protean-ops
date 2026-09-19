@@ -5,6 +5,28 @@ entry per release: what changed, why, and how it was verified.
 
 ## Unreleased
 
+- **What:** ship the record table shape in the schema templates, and make the
+  documented gate commands the ones the descriptor declares.
+  `records/ROTATION-STATE.md.tmpl`, `records/LEARNINGS.md.tmpl`, and
+  `records/INFLIGHT.md.tmpl` now carry the table header their gate parses
+  (in-flight also carries the explicit empty-state row its gate skips), and the
+  README's Use section shows the copy step and the four record gates as runnable
+  commands. The README gate table's rotation row now names the same fixture and
+  roster arguments as `protean-ingredient.json`, so the declared commands work from
+  a fresh clone and from an installed target.
+- **Why:** the documented first step, copy the template to the record name the gate
+  expects and then append rows, produced a record with no table at all: the three
+  templates ended at a bare `## Rows` / `## Lease rows` heading, so
+  `check-rotation.py`, `check-inflight.py`, and `check-learnings.py` reported
+  `no table parsed` (exit 2) against a record built exactly as the README
+  instructed, and no role could append a row to a table that was not there.
+  `tests/test_gates.py` exercises the `records/examples/` fixtures but never the
+  `.md.tmpl` files, so nothing caught it.
+- **Verified:** `python3 -m unittest discover -s tests` passes; the new
+  `tests.test_gates.TestShippedTemplates` cases fail against the previous templates
+  and pass after the change; every declared gate in `protean-ingredient.json` exits 0
+  from a fresh clone and from an installed target.
+
 - **What:** add the idle-watchdog launch admission gate: `scripts/idle-watchdog.py`
   (cron entry point with the locked guard order - singleton flock, kill-switch
   read first after the lock, authoritative process-registry adapter, project

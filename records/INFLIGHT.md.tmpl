@@ -23,3 +23,11 @@ reused one). Only claim sessions you can observe; never invent a row for another
 | status | `active`, `released`, `crashed`, or `conflict` |
 
 ## Lease rows
+
+| claim id | session id | role | provider/model | tree / worktree / branch | owned files | claim time | lease expiry | release time | conflict result | status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| (empty state) | - | - | - | - | - | - | - | - | - | empty, no live writer |
+
+The header above is the fixed column set, in the order `check-inflight.py` reads it.
+Claim a row before your first write and release it on exit; the empty-state row is
+skipped by the gate, so a fresh record passes before any claim exists.

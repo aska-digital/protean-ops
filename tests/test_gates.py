@@ -7,6 +7,7 @@ single-cause so a failure names exactly the rule under test. Run:
   python3 -m unittest discover -s tests
 """
 import hashlib
+import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -279,6 +280,113 @@ class TestHotpathFreeze(GateRun):
         self.assertIn("file missing", out)
         rc, out = self.run_gate("check-hotpath-freeze.py", self.tmp / "absent.md5")
         self.assertEqual(rc, 2)
+
+
+class TestShippedTemplates(unittest.TestCase):
+    """The shipped schema templates must be the records the gates parse.
+
+    The documented first step for an operator is to copy a template to the record
+    name its gate expects and then append rows. A template that does not carry the
+    record's table header cannot become a checkable record that way, and the
+    header is the one part of the record no role should have to retype.
+    """
+
+    ROOT = Path(__file__).resolve().parent.parent
+    TEMPLATES = ROOT / "records"
+
+    def gate_module(self, gate):
+        spec = importlib.util.spec_from_file_location(
+            "gate_" + gate.replace("-", "_")[:-3], SCRIPTS / gate)
+        assert spec is not None and spec.loader is not None, gate
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    def table_header(self, text, heading):
+        """First non-separator table row under `heading`, or None."""
+        started = False
+        for line in text.splitlines():
+            s = line.strip()
+            if s.startswith("## "):
+                started = s.startswith(heading)
+                continue
+            if not started or not s.startswith("|"):
+                continue
+            cells = [c.strip() for c in s.strip().strip("|").split("|")]
+            if all(c and set(c) <= set("-: ") for c in cells):
+                continue
+            return cells
+        return None
+
+    def copied_record(self, template, record, extra=()):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        (root / record).write_text(
+            (self.TEMPLATES / template).read_text(encoding="utf-8"), encoding="utf-8")
+        for name, text in extra:
+            (root / name).write_text(text, encoding="utf-8")
+        return root
+
+    def run_gate(self, gate, *argv):
+        r = subprocess.run([sys.executable, str(SCRIPTS / gate)] + [str(a) for a in argv],
+                           capture_output=True, text=True)
+        return r.returncode, r.stdout + r.stderr
+
+    def assert_template_table(self, template, heading, names=None, count=None):
+        header = self.table_header(
+            (self.TEMPLATES / template).read_text(encoding="utf-8"), heading)
+        self.assertIsNotNone(
+            header, "%s: no table under '%s'" % (template, heading))
+        assert header is not None
+        if count is not None:
+            self.assertEqual(len(header), count,
+                             "%s: %d columns, expected %d" % (template, len(header), count))
+        if names is not None:
+            self.assertEqual([c.lower() for c in header], [c.lower() for c in names],
+                             "%s: column names differ from the gate's own column set" % template)
+
+    def test_rotation_template_carries_the_gate_columns(self):
+        self.assert_template_table(
+            "ROTATION-STATE.md.tmpl", "## Rows",
+            names=self.gate_module("check-rotation.py").COLS)
+
+    def test_learnings_template_carries_the_gate_columns(self):
+        self.assert_template_table(
+            "LEARNINGS.md.tmpl", "## Rows",
+            names=self.gate_module("check-learnings.py").FIELDS)
+
+    def test_inflight_template_carries_the_gate_columns(self):
+        self.assert_template_table(
+            "INFLIGHT.md.tmpl", "## Lease rows",
+            count=self.gate_module("check-inflight.py").NCOL)
+
+    def test_contrib_state_template_carries_the_gate_columns(self):
+        self.assert_template_table(
+            "CONTRIB-STATE.md.tmpl", "## Rows",
+            count=self.gate_module("check-contrib-state.py").NCOL)
+
+    def test_copied_inflight_template_is_checkable(self):
+        root = self.copied_record("INFLIGHT.md.tmpl", "INFLIGHT.md")
+        rc, out = self.run_gate("check-inflight.py", root / "INFLIGHT.md")
+        self.assertEqual(rc, 0, out)
+        self.assertIn("check-inflight: PASS", out)
+
+    def test_copied_contrib_state_template_is_checkable(self):
+        root = self.copied_record("CONTRIB-STATE.md.tmpl", "CONTRIB-STATE.md")
+        rc, out = self.run_gate("check-contrib-state.py", root / "CONTRIB-STATE.md")
+        self.assertEqual(rc, 0, out)
+        self.assertIn("check-contrib-state: PASS", out)
+
+    def test_copied_rotation_template_reports_missing_input_not_a_violation(self):
+        root = self.copied_record(
+            "ROTATION-STATE.md.tmpl", "ROTATION-STATE.md",
+            [("ROSTER.txt", "roles: qa, build\n")])
+        rc, out = self.run_gate("check-rotation.py", root / "ROTATION-STATE.md")
+        # A rotation record with no handoff row yet is unverifiable, not invalid:
+        # the gate reports missing input (2), never a violation (1).
+        self.assertEqual(rc, 2, out)
+        self.assertIn(str(root / "ROTATION-STATE.md"), out)
 
 
 if __name__ == "__main__":
