@@ -24,11 +24,12 @@ SKIP WHEN:
 | Path | Contents |
 |---|---|
 | `records/` | schema templates `.md.tmpl` (fixed columns, empty state), `ROSTER.txt` |
-| `scripts/protean-ops/` | the six gate scripts |
+| `scripts/protean-ops/` | the seven gate scripts |
 | `gates/protean-ops/` | the leak gate and the blocklist |
 
-The six gates are rotation, inflight, learnings, hot-path freeze, decision
-report, and the contribution-state gate (G-14).
+The seven gates are rotation, inflight, learnings, hot-path freeze, decision
+report, the contribution-state gate (G-14), and the delivery-receipt
+(delegation) gate.
 
 The idle watchdog is not part of the installed payload: it runs from this
 checkout via absolute paths. Its files are `scripts/idle-watchdog.py`,
@@ -108,9 +109,10 @@ explicit empty-state row, so those two pass before any live row exists. The rota
 roster comes from `ROSTER.txt` beside the record, which the payload ships at
 `records/ROSTER.txt`.
 
-The hot-path freeze gate and the decision-report gate need artifacts no template
-ships, a freeze manifest and a rendered report, so they are declared against the
-synthetic fixtures under `records/examples/`.
+The hot-path freeze gate, the decision-report gate, and the delivery-receipt
+gate need artifacts no template ships, a freeze manifest, a rendered report,
+and a delegation receipt, so the three are declared against the synthetic
+fixtures under `records/examples/`.
 
 The contribution-state gate answers two questions from one append-only record:
 whether the recorded state is legal, and whether a queried write may happen now.
@@ -131,8 +133,10 @@ local branch, commit, test run, and rendered draft stay allowed.
 Record resolution defaults to `./records` and can be redirected with
 `$PROTEAN_RECORDS_ROOT`. The rotation roster comes from `--roster`,
 `$PROTEAN_ROSTER`, or `ROSTER.txt` beside the record, and the gate fails closed
-when none is available. Every gate is read-only, stdlib-only, `--help`-able, and
-exits 0 pass, 1 violation, 2 missing or unparseable input.
+when none is available. Every gate is read-only, stdlib-only, and `--help`-able.
+The record gates exit 0 pass, 1 violation, 2 missing or unparseable input;
+the delivery-receipt gate separates the failure modes further (2 usage,
+3 missing or unparseable record, 5 integrity violation).
 
 The record templates ship as schema with an empty state and carry no live row.
 The shipped examples under `records/examples/` are synthetic fixtures the gates
@@ -149,6 +153,7 @@ run against, not record content.
 | hot-path freeze | `python3 scripts/protean-ops/check-hotpath-freeze.py records/examples/valid/hotpath-manifest.md5` |
 | decision report | `python3 scripts/protean-ops/check-decision-report.py records/examples/valid/decision-report.html --evidence records/examples/valid/decision-evidence.md` |
 | contribution state | `python3 scripts/protean-ops/check-contrib-state.py records/examples/valid/CONTRIB-STATE.md` |
+| delivery receipt | `python3 scripts/protean-ops/check-delegation.py records/examples/valid/DELEGATION-RECEIPT-lane.md --roles records/examples/valid/ROSTER.txt` |
 
 The declared commands run against the shipped fixture records under
 `records/examples/`, so a fresh clone is verifiable and the same commands work
