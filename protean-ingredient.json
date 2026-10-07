@@ -52,6 +52,12 @@
       "cmd": "python3 scripts/protean-ops/check-decision-report.py records/examples/valid/decision-report.html --evidence records/examples/valid/decision-evidence.md"
     },
     {
+      "name": "op-delegation",
+      "cwd": ".",
+      "postInstall": true,
+      "cmd": "python3 scripts/protean-ops/check-delegation.py records/examples/valid/DELEGATION-RECEIPT-lane.md --roles records/examples/valid/ROSTER.txt"
+    },
+    {
       "name": "op-contrib-state",
       "cwd": ".",
       "postInstall": true,

@@ -5,6 +5,20 @@ entry per release: what changed, why, and how it was verified.
 
 ## Unreleased
 
+- **What:** add the delivery-receipt (delegation) gate:
+  `scripts/protean-ops/check-delegation.py`, declared as `op-delegation` in
+  `protean-ingredient.json` and in the README gate table.
+- **Why:** a delivery with no delegation list is a proven self-made delivery:
+  nothing names the specialists that built it, so no reviewer can verify the
+  work was done by the roles claimed. The gate fails a receipt block with zero
+  specialist lanes, rejects placeholder lane values and off-manifest roles,
+  refuses world-writable receipts, and fails closed when no role manifest is
+  available.
+- **Verified:** `python3 -m unittest discover -s tests` passes (new
+  `tests.test_gates.TestDelegation` cases: shipped valid fixture passes, the
+  two shipped invalid fixtures fail with named diagnostics); the declared
+  `op-delegation` command exits 0 from a fresh clone.
+
 - **What:** ship the record table shape in the schema templates, and make the
   documented gate commands the ones the descriptor declares.
   `records/ROTATION-STATE.md.tmpl`, `records/LEARNINGS.md.tmpl`, and
