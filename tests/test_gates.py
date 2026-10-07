@@ -17,7 +17,8 @@ from pathlib import Path
 SCRIPTS = Path(__file__).resolve().parent.parent / "scripts" / "protean-ops"
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 GATES = ["check-rotation.py", "check-inflight.py", "check-learnings.py",
-         "check-decision-report.py", "check-hotpath-freeze.py"]
+         "check-decision-report.py", "check-hotpath-freeze.py",
+         "check-delegation.py"]
 
 ROT_HDR = ("| handoff id | boundary time | previous worker | next worker | stage / unit "
            "| capability justification | verified provider/model | exception reason | release state |\n"
@@ -235,6 +236,79 @@ class TestDecisionReport(GateRun):
     def test_red_no_inputs(self):
         rc, out = self.run_gate("check-decision-report.py")
         self.assertEqual(rc, 2)
+
+
+class TestDelegation(GateRun):
+    OPEN = "<!-- DELEGATION-RECEIPT begin -->\n"
+    CLOSE = "<!-- DELEGATION-RECEIPT end -->\n"
+
+    def receipt(self, body):
+        roles = self.write("ROSTER.txt", "roles: qa, build, research\n")
+        p = self.write("RECEIPT.md",
+                       "# receipt\n\n" + self.OPEN + body + self.CLOSE)
+        return p, roles
+
+    def lane(self, role="build", lane="harbor-build", stage="s4 build",
+             evidence="cache/harbor-build-receipt.md"):
+        return ('specialist=%s lane="%s" stage="%s" evidence="%s"\n'
+                % (role, lane, stage, evidence))
+
+    def test_green(self):
+        p, roles = self.receipt(self.lane() + self.lane("qa", "harbor-qa",
+                                                        "s5 verify",
+                                                        "cache/harbor-qa-verdict.md"))
+        rc, out = self.run_gate("check-delegation.py", p, "--roles", roles)
+        self.assertEqual(rc, 0, out)
+        self.assertIn("check-delegation: PASS", out)
+
+    def test_red_self_made_zero_lanes(self):
+        p, roles = self.receipt("<!-- no lanes declared -->\n")
+        rc, out = self.run_gate("check-delegation.py", p, "--roles", roles)
+        self.assertEqual(rc, 5)
+        self.assertIn("presumed self-made", out)
+
+    def test_red_placeholder_values(self):
+        p, roles = self.receipt(self.lane(lane="<lane>", stage="test",
+                                          evidence="none"))
+        rc, out = self.run_gate("check-delegation.py", p, "--roles", roles)
+        self.assertEqual(rc, 5)
+        self.assertIn("placeholder", out)
+
+    def test_red_role_off_manifest(self):
+        p, roles = self.receipt(self.lane(role="outsider"))
+        rc, out = self.run_gate("check-delegation.py", p, "--roles", roles)
+        self.assertEqual(rc, 5)
+        self.assertIn("not on the manifest", out)
+
+    def test_red_missing_block(self):
+        p = self.write("RECEIPT.md", "# no block here\n")
+        rc, out = self.run_gate("check-delegation.py", p,
+                                "--roles", self.write("ROSTER.txt", "roles: build\n"))
+        self.assertEqual(rc, 3)
+        self.assertIn("no DELEGATION-RECEIPT block", out)
+
+    def test_red_missing_receipt(self):
+        rc, out = self.run_gate("check-delegation.py", self.tmp / "absent.md")
+        self.assertEqual(rc, 3)
+        self.assertIn("not found", out)
+
+    def test_shipped_fixtures(self):
+        root = Path(__file__).resolve().parent.parent / "records" / "examples"
+        roster = root / "valid" / "ROSTER.txt"
+        rc, out = self.run_gate("check-delegation.py",
+                                root / "valid" / "DELEGATION-RECEIPT-lane.md",
+                                "--roles", roster)
+        self.assertEqual(rc, 0, out)
+        rc, out = self.run_gate("check-delegation.py",
+                                root / "invalid" / "DELEGATION-RECEIPT-self-made.md",
+                                "--roles", roster)
+        self.assertEqual(rc, 5)
+        self.assertIn("presumed self-made", out)
+        rc, out = self.run_gate("check-delegation.py",
+                                root / "invalid" / "DELEGATION-RECEIPT-placeholder.md",
+                                "--roles", roster)
+        self.assertEqual(rc, 5)
+        self.assertIn("placeholder", out)
 
 
 class TestHotpathFreeze(GateRun):
