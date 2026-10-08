@@ -109,6 +109,11 @@ def check_rotation_rows(rows, src, roster=None):
     v = []
     for i, cells in enumerate(rows):
         rid = cells[0] if cells else "row %d" % (i + 1)
+        # The documented empty-state sentinel row records "no handoff has been
+        # made yet"; it is not a rotation row and is never a violation. Mirrors
+        # the skip already present in check-inflight.py. See issue #9.
+        if "empty state" in str(rid).strip().lower():
+            continue
         if len(cells) != NCOL:
             v.append("FAIL: %s row '%s': %d cells, expected %d" % (src, rid, len(cells), NCOL))
             continue

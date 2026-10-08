@@ -5,6 +5,26 @@ entry per release: what changed, why, and how it was verified.
 
 ## Unreleased
 
+- **What:** accept the documented `(empty state)` sentinel row in the rotation
+  and learnings gates. `check-rotation.py` and `check-learnings.py` now skip a
+  row whose first cell contains `empty state`, matching the skip
+  `check-inflight.py` has always performed. Ships green fixtures
+  `tests/fixtures/valid/ROTATION-STATE-empty.md` and `LEARNINGS-empty.md`, plus
+  `ROTATION-STATE-empty-then-offroster.md` proving the skip does not mask a real
+  violation. Both empty fixtures are wired into `.github/workflows/verify.yml`.
+- **Why:** a freshly bootstrapped record is all sentinel and no rows. Before
+  this change the two gates rejected it with nine violations (`-` is a
+  placeholder, `-` is not on the roster, `-` is not `lrn-<n>`), so a new
+  install's first preflight was red for the crime of having done nothing yet.
+  `check-inflight.py` already handled this; the other two were simply
+  inconsistent. See issue #9.
+- **Verified:** new tests
+  (`TestRotation.test_green_empty_state_sentinel`,
+  `TestLearnings.test_green_empty_state_sentinel`, and the two
+  `test_red_sentinel_does_not_mask_a_real_violation` cases) fail before the fix
+  and pass after it; full suite `python3 -m unittest discover -s tests` OK
+  (157 tests).
+
 - **What:** add the delivery-receipt (delegation) gate:
   `scripts/protean-ops/check-delegation.py`, declared as `op-delegation` in
   `protean-ingredient.json` and in the README gate table.

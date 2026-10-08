@@ -26,6 +26,8 @@ jobs:
           python3 scripts/protean-ops/check-rotation.py records/examples/valid/ROTATION-STATE.md --roster records/examples/valid/ROSTER.txt
           python3 scripts/protean-ops/check-inflight.py records/examples/valid/INFLIGHT.md
           python3 scripts/protean-ops/check-learnings.py records/examples/valid/LEARNINGS.md
+          python3 scripts/protean-ops/check-rotation.py records/examples/valid/ROTATION-STATE-empty.md --roster records/examples/valid/ROSTER.txt
+          python3 scripts/protean-ops/check-learnings.py records/examples/valid/LEARNINGS-empty.md
           python3 scripts/protean-ops/check-hotpath-freeze.py records/examples/valid/hotpath-manifest.md5
           python3 scripts/protean-ops/check-decision-report.py records/examples/valid/decision-report.html --evidence records/examples/valid/decision-evidence.md
       - name: Run tests

@@ -111,6 +111,30 @@ class TestRotation(GateRun):
         self.assertEqual(rc, 1)
         self.assertIn("not on the roster", out)
 
+    # --- empty-state sentinel (issue #9) -----------------------------------
+    # A freshly bootstrapped record carries one "(empty state)" row. That row
+    # is "nothing has happened yet", not a violation — exactly as
+    # check-inflight.py already treats it.
+
+    def test_green_empty_state_sentinel(self):
+        p = self.fixture(
+            "| (empty state) | - | - | - | - | - | - | - | empty, no writer yet |\n")
+        rc, out = self.run_gate("check-rotation.py", p)
+        self.assertEqual(rc, 0, out)
+        self.assertIn("check-rotation: PASS", out)
+
+    def test_green_shipped_empty_fixture(self):
+        p = FIXTURES / "valid" / "ROTATION-STATE-empty.md"
+        rc, out = self.run_gate("check-rotation.py", p)
+        self.assertEqual(rc, 0, out)
+
+    def test_red_sentinel_does_not_mask_a_real_violation(self):
+        """The skip must not swallow a violation in a row after the sentinel."""
+        p = FIXTURES / "valid" / "ROTATION-STATE-empty-then-offroster.md"
+        rc, out = self.run_gate("check-rotation.py", p)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("not on the roster", out)
+
     def test_red_empty_model(self):
         p = self.fixture(rot_row("a-h1", "qa", "build", "—"))
         rc, out = self.run_gate("check-rotation.py", p)
@@ -183,6 +207,31 @@ class TestLearnings(GateRun):
         rc, out = self.run_gate("check-learnings.py", p)
         self.assertEqual(rc, 1)
         self.assertIn("duplicate learning id", out)
+
+    # --- empty-state sentinel (issue #9) -----------------------------------
+    # A freshly bootstrapped learnings record carries one "(empty state)" row:
+    # "no incident recorded yet", which is not a placeholder-filled incident.
+
+    def test_green_empty_state_sentinel(self):
+        p = self.fixture(
+            "| (empty state) | - | - | - | - | - | - | no incident recorded | - |\n")
+        rc, out = self.run_gate("check-learnings.py", p)
+        self.assertEqual(rc, 0, out)
+        self.assertIn("check-learnings: PASS", out)
+
+    def test_green_shipped_empty_fixture(self):
+        p = FIXTURES / "valid" / "LEARNINGS-empty.md"
+        rc, out = self.run_gate("check-learnings.py", p)
+        self.assertEqual(rc, 0, out)
+
+    def test_red_sentinel_does_not_mask_a_real_violation(self):
+        """A real placeholder row after the sentinel must still fail."""
+        p = self.fixture(
+            "| (empty state) | - | - | - | - | - | - | no incident recorded | - |\n"
+            + lrn_row("lrn-001", verifier="—"))
+        rc, out = self.run_gate("check-learnings.py", p)
+        self.assertEqual(rc, 1, out)
+        self.assertIn("independent verifier", out)
 
 
 class TestDecisionReport(GateRun):
