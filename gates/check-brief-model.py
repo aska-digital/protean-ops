@@ -73,11 +73,11 @@ def check(brief: Path, profile: str, home: Path) -> tuple[int, str]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--brief", required=True, help="path to the dispatch brief")
-    parser.add_argument("--profile", required=True, help="profile name, e.g. frida")
+    parser.add_argument("--profile", required=True, help="profile name")
     parser.add_argument(
         "--home",
         default=str(Path.home() / ".hermes"),
-        help="Hermes home that contains profiles/ (default: ~/.hermes)",
+        help="Hermes home that contains the profiles directory (default: a .hermes directory under the user home)",
     )
     args = parser.parse_args(argv)
     code, message = check(Path(args.brief), args.profile, Path(args.home))

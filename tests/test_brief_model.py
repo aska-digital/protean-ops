@@ -4,11 +4,10 @@ import subprocess
 import textwrap
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parent.parent
-SCRIPT = REPO / "gates" / "check-brief-model.py"
+SCRIPT = Path(__file__).resolve().parent.parent / "gates" / "check-brief-model.py"
 
 
-def _run(tmp_path: Path, brief: str, config: str, profile: str = "frida") -> subprocess.CompletedProcess:
+def _run(tmp_path: Path, brief: str, config: str, profile: str = "worker") -> subprocess.CompletedProcess:
     home = tmp_path / "hermes"
     cfg = home / "profiles" / profile / "config.yaml"
     cfg.parent.mkdir(parents=True)
