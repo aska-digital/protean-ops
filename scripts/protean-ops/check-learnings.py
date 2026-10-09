@@ -84,6 +84,11 @@ def check_rows(rows, src):
         rid = cells[0] if cells else "?"
         if rid.strip().lower() == "learning id":
             continue
+        # The documented empty-state sentinel row records "no incident yet"; it
+        # carries no lrn-<n> id and no fields, and is never a violation. Mirrors
+        # the skip already present in check-inflight.py. See issue #9.
+        if "empty state" in rid.strip().lower():
+            continue
         if len(cells) != NCOL:
             v.append("FAIL: %s row '%s': %d cells, expected %d" % (src, rid, len(cells), NCOL))
             continue
