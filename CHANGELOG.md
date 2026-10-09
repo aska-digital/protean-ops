@@ -24,6 +24,23 @@ entry per release: what changed, why, and how it was verified.
   `test_red_sentinel_does_not_mask_a_real_violation` cases) fail before the fix
   and pass after it; full suite `python3 -m unittest discover -s tests` OK
   (157 tests).
+- **What:** make the valid contribution-state fixture time-independent and run the
+  two declared-but-uncovered gates in CI. `records/examples/valid/CONTRIB-STATE.md`
+  now carries the same non-expiring values as its `tests/fixtures/valid/`
+  counterpart (`expires=2099-01-01T00:00:00Z`, `lease_until=2099-01-01T00:00:00Z`),
+  and `.github/workflows/verify.yml` adds the `op-delegation` and `op-contrib-state`
+  commands the descriptor declares.
+- **Why:** the shipped valid fixture pinned `expires=2026-09-24T00:00:00Z` and
+  `lease_until=2026-09-17T17:22:10Z`, both in the past. `check-contrib-state.py`
+  reads the real clock unless `--now` is given, so the gate reported
+  `grant 'g-7': expired` (exit 1) against the repository's own valid fixture from
+  2026-09-25 onward, and the kit installer's post-install gate for `protean-ops`
+  failed closed (exit 5) on a fresh machine. The two gates were absent from the CI
+  gate step, so nothing exercised them or the fixture they read.
+- **Verified:** `python3 -m unittest discover -s tests` passes (151 tests); every
+  declared gate in `protean-ingredient.json` exits 0 from a fresh clone, including
+  the previously failing `op-contrib-state` command.
+
 
 - **What:** add the delivery-receipt (delegation) gate:
   `scripts/protean-ops/check-delegation.py`, declared as `op-delegation` in

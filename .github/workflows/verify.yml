@@ -30,5 +30,7 @@ jobs:
           python3 scripts/protean-ops/check-learnings.py records/examples/valid/LEARNINGS-empty.md
           python3 scripts/protean-ops/check-hotpath-freeze.py records/examples/valid/hotpath-manifest.md5
           python3 scripts/protean-ops/check-decision-report.py records/examples/valid/decision-report.html --evidence records/examples/valid/decision-evidence.md
+          python3 scripts/protean-ops/check-delegation.py records/examples/valid/DELEGATION-RECEIPT-lane.md --roles records/examples/valid/ROSTER.txt
+          python3 scripts/protean-ops/check-contrib-state.py records/examples/valid/CONTRIB-STATE.md
       - name: Run tests
         run: python3 -m unittest discover -s tests -v
